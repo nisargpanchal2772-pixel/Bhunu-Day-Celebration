@@ -44,7 +44,7 @@ export default function AudioPlayer() {
     <>
       <audio
         ref={audioRef}
-        src="/[FREE] Romantic type beat _Kasoor_ _ Aur X Taimour baig type beat.mp3"
+        src="/bg-music.mp3"
         loop
         preload="auto"
       />
