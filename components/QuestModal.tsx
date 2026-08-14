@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { X, Upload, Sparkles } from "lucide-react";
 import { QuestDay } from "@/lib/questData";
-import { compressImage } from "@/lib/utils";
+import { compressImage, base64ToBlob } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface QuestSubmission {
@@ -58,19 +58,46 @@ export default function QuestModal({ day, isOpen, onClose, existingSubmission, o
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text && !image) return;
     
-    setShowParticles(true);
-    setTimeout(() => {
-      onSave({
-        text,
-        image,
-        timestamp: existingSubmission?.timestamp || Date.now(),
-      });
-      onClose();
-    }, 1200);
+    setIsUploading(true);
+    let finalImageUrl = image;
+
+    try {
+      // If it's a new upload (base64 string), upload it to Vercel Blob
+      if (image.startsWith('data:')) {
+        const file = base64ToBlob(image);
+        const formData = new FormData();
+        formData.append('file', file, `quest-day-${day.dayNumber}.jpg`);
+        formData.append('dayNumber', day.dayNumber.toString());
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        finalImageUrl = data.url; // The URL from Vercel Blob
+      }
+
+      setShowParticles(true);
+      setTimeout(() => {
+        onSave({
+          text,
+          image: finalImageUrl,
+          timestamp: existingSubmission?.timestamp || Date.now(),
+        });
+        setIsUploading(false);
+        onClose();
+      }, 1200);
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Failed to save to cloud. Please try again.');
+      setIsUploading(false);
+    }
   };
 
   return (
