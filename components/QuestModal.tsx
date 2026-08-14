@@ -66,21 +66,29 @@ export default function QuestModal({ day, isOpen, onClose, existingSubmission, o
     let finalImageUrl = image;
 
     try {
-      // If it's a new upload (base64 string), upload it to Vercel Blob
+      // If it's a new upload (base64 string), try to upload it to Vercel Blob
       if (image.startsWith('data:')) {
-        const file = base64ToBlob(image);
-        const formData = new FormData();
-        formData.append('file', file, `quest-day-${day.dayNumber}.jpg`);
-        formData.append('dayNumber', day.dayNumber.toString());
+        try {
+          const file = base64ToBlob(image);
+          const formData = new FormData();
+          formData.append('file', file, `quest-day-${day.dayNumber}.jpg`);
+          formData.append('dayNumber', day.dayNumber.toString());
 
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!res.ok) throw new Error('Upload failed');
-        const data = await res.json();
-        finalImageUrl = data.url; // The URL from Vercel Blob
+          if (res.ok) {
+            const data = await res.json();
+            finalImageUrl = data.url; // The URL from Vercel Blob
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            console.warn('Vercel Blob upload failed, falling back to local base64 storage. Error:', errData.error || res.statusText);
+          }
+        } catch (uploadError) {
+          console.warn('Network or error uploading to Vercel Blob, falling back to local base64 storage:', uploadError);
+        }
       }
 
       setShowParticles(true);
@@ -95,7 +103,7 @@ export default function QuestModal({ day, isOpen, onClose, existingSubmission, o
       }, 1200);
     } catch (error) {
       console.error('Error saving:', error);
-      alert('Failed to save to cloud. Please try again.');
+      alert('Failed to save. Please try again.');
       setIsUploading(false);
     }
   };
