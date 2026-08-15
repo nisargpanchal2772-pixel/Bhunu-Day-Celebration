@@ -30,10 +30,20 @@ export default function QuestPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSaveSubmission = (dayNumber: number, submission: QuestSubmission) => {
+  const handleSaveSubmission = async (dayNumber: number, submission: QuestSubmission) => {
     const updated = { ...submissions, [dayNumber]: submission };
     setSubmissions(updated);
     localStorage.setItem("bhunu-quest-submissions", JSON.stringify(updated));
+
+    try {
+      await fetch("/api/save-submissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+    } catch (err) {
+      console.warn("Background cloud sync failed:", err);
+    }
   };
 
   const handleTitleClick = () => {
