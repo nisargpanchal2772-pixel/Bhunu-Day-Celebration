@@ -20,7 +20,15 @@ export default function QuestPage() {
     const saved = localStorage.getItem("bhunu-quest-submissions");
     if (saved) {
       try {
-        setSubmissions(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setSubmissions(parsed);
+
+        // Sync old/pre-existing answers to the cloud on page load
+        fetch("/api/save-submissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: saved,
+        }).catch((err) => console.warn("Initial sync to cloud failed:", err));
       } catch (e) {
         console.error("Failed to parse submissions");
       }
