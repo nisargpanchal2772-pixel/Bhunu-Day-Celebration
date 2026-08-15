@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const password = request.headers.get('x-admin-password') || searchParams.get('password');
     
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Bhunubabyloveyou@2772';
     
     if (password !== adminPassword) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
